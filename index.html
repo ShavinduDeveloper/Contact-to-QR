@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Contact to QR Generator (SVG)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <!-- Standard favicon -->
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+
+    <!-- PNG favicon (optional for better resolution) -->
+    <link rel="icon" href="icon.png" sizes="32x32" type="image/png">
+    <link rel="icon" href="icon.png" sizes="16x16" type="image/png">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            margin-top: 10rem;
+            margin-bottom: 10rem;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 30px;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f8f9ff;
+        }
+
+        .upload-area.hidden {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.2em;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .upload-hint {
+            color: #999;
+            margin-top: 10px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .result-area {
+            display: none;
+        }
+
+        .result-area.active {
+            display: block;
+        }
+
+        .success-message {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .qr-display {
+            margin-top: 20px;
+        }
+
+        .qr-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .qr-card {
+            text-align: center;
+            background: #fff;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .qr-card h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .qr-card img {
+            border-radius: 10px;
+            width: 200px;
+            height: 200px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            margin-top: 2rem;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+        }
+
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .buttons {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            color: #004085;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+
+        .info-box ol {
+            margin-left: 20px;
+        }
+
+        .info-box li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 CSV Contact to QR Generator (SVG)</h1>
+            <p>Upload your CSV to generate vCard QR codes for each contact</p>
+        </div>
+
+        <div id="error" class="error hidden"></div>
+
+        <div id="uploadArea" class="upload-area" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-icon">📤</div>
+            <div class="upload-text">Click to upload CSV file</div>
+            <div class="upload-hint">Supports .csv files with Name, Designation, Phone Number, Email.</div>
+            <input type="file" id="fileInput" accept=".csv">
+        </div>
+
+        <div id="resultArea" class="result-area">
+            <div class="success-message">
+                <strong>✓ File uploaded successfully</strong><br>
+                <span id="fileName"></span>
+            </div>
+
+            <div class="qr-display" id="qrDisplay"></div>
+
+            <div class="buttons">
+                <button class="btn btn-primary" onclick="downloadAllQRCodes()">📦 Download All QR Codes (ZIP)</button>
+                <button class="btn btn-secondary" onclick="reset()">🔄 Upload New File</button>
+            </div>
+
+            <div class="info-box">
+                <h3>📋 How to use:</h3>
+                <ol>
+                    <li>Prepare a CSV file with columns: <strong>Name, Designation, Phone Number, Email</strong>.</li>
+                    <li>Upload it using the box above.</li>
+                    <li>A QR code will be created for each contact automatically in SVG format.</li>
+                    <li>Download each QR code individually or all at once.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let csvData = null;
+        let qrImages = [];
+
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const resultArea = document.getElementById('resultArea');
+        const errorDiv = document.getElementById('error');
+        const qrDisplay = document.getElementById('qrDisplay');
+        const fileNameSpan = document.getElementById('fileName');
+
+        fileInput.addEventListener('change', handleFileUpload);
+
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (!file.name.endsWith('.csv')) { showError('Please upload a valid CSV file.'); return; }
+
+            hideError();
+            fileNameSpan.textContent = file.name;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                csvData = event.target.result;
+                generateMultipleQRCodes(csvData);
+            };
+            reader.readAsText(file);
+        }
+
+        function generateMultipleQRCodes(data) {
+            const lines = data.split('\n').filter(line => line.trim());
+            const headers = lines[0].split(',').map(h => h.trim());
+            const contacts = lines.slice(1);
+
+            if (contacts.length === 0) { showError('No contact data found in file.'); return; }
+
+            uploadArea.classList.add('hidden');
+            resultArea.classList.add('active');
+
+            qrImages = [];
+            let html = '<h2 style="text-align:center;color:#333;margin-bottom:20px;">Generated QR Codes</h2><div class="qr-grid">';
+
+            contacts.forEach((contactLine, index) => {
+                const values = contactLine.split(',').map(v => v.trim());
+                if (values.length !== headers.length) return;
+
+                const contact = {};
+                headers.forEach((h, i) => contact[h] = values[i]);
+
+                const name = contact['Name'] || `Contact ${index + 1}`;
+                const designation = contact['Designation'] || '';
+                const phone = contact['Phone Number'] || '';
+                const email = contact['Email'] || '';
+
+                const vCardData =
+                    `BEGIN:VCARD
+VERSION:3.0
+N:${name}
+FN:${name}
+TITLE:${designation}
+TEL;TYPE=CELL:${phone}
+EMAIL;TYPE=INTERNET:${email}
+END:VCARD`;
+
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&format=svg&data=${encodeURIComponent(vCardData)}`;
+                const safeName = name.replace(/[^a-zA-Z0-9]/g, '_') || `contact_${index + 1}`;
+
+                qrImages.push({ url: qrUrl, filename: safeName + '.svg' });
+
+                html += `
+            <div class="qr-card">
+                <h3>${name}</h3>
+                <img src="${qrUrl}" alt="QR for ${name}">
+                <div style="margin-top:10px;">
+                    <button class="btn btn-primary" onclick="downloadImage('${qrUrl}', '${safeName}.svg')">⬇️ Download</button>
+                </div>
+            </div>`;
+            });
+
+            html += '</div>';
+            qrDisplay.innerHTML = html;
+        }
+
+        function downloadImage(url, filename) {
+            fetch(url).then(res => res.blob()).then(blob => {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        }
+
+        async function downloadAllQRCodes() {
+            if (qrImages.length === 0) return;
+            const zip = new JSZip();
+
+            for (let { url, filename } of qrImages) {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                zip.file(filename, blob);
+            }
+
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            saveAs(zipBlob, 'All_QR_Codes.zip');
+        }
+
+        function showError(message) { errorDiv.textContent = message; errorDiv.classList.remove('hidden'); }
+        function hideError() { errorDiv.classList.add('hidden'); }
+
+        function reset() {
+            csvData = null;
+            qrImages = [];
+            fileInput.value = '';
+            uploadArea.classList.remove('hidden');
+            resultArea.classList.remove('active');
+            qrDisplay.innerHTML = '';
+            hideError();
+        }
+    </script>
+
+    <footer
+        style="text-align:center; margin-top:40px; padding:20px 0; color:#fff; background:#667eea; font-size:1em; position: fixed; width: 100%; bottom: 0;">
+        &copy; 2025 Shavindu Thushara
+    </footer>
+</body>
+
+</html>
+</body>
+
+</html>

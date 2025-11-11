@@ -17,6 +17,7 @@
 
     <style>
         * {
+            user-select: none;
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -210,6 +211,236 @@
         .info-box li {
             margin: 8px 0;
         }
+
+        /* Help link */
+        .help-link {
+            display: inline-block;
+            margin-top: 12px;
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: none;
+            transition: 0.3s;
+            text-align: center;
+            width: 100%;
+        }
+
+        .help-link:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        /* ======== MODAL STYLES (IMPROVED RESPONSIVE VERSION) ======== */
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 9999;
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.3s ease forwards;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background: #ffffff;
+            color: #333;
+            border-radius: 20px;
+            margin: 5% auto;
+            padding: 30px;
+            width: 90%;
+            max-width: 1000px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+            position: relative;
+            animation: slideIn 0.4s ease forwards;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 28px;
+            color: #777;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .modal-content h2 {
+            color: #333;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .modal-content p {
+            color: #555;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        .sample-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            font-size: 0.95rem;
+        }
+
+        .sample-table th,
+        .sample-table td {
+            border: 1px solid #ddd;
+            padding: 12px 14px;
+            text-align: left;
+        }
+
+        .sample-table th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+
+        .sample-table tr:nth-child(even) {
+            background-color: #f8f9ff;
+        }
+
+        /* Help link */
+        .help-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: #667eea;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+
+        .help-link:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        /* ======== ANIMATIONS ======== */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-30px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* ======== MOBILE VERSION ======== */
+        @media (max-width: 910px) {
+            .modal-content {
+                width: 100%;
+                max-width: 1000px;
+                margin: 0;
+                padding: 20px;
+                border-radius: 20px 20px 0 0;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                overflow-y: auto;
+                animation: slideUp 0.4s ease forwards;
+            }
+
+            .modal-content h2 {
+                font-size: 1.25rem;
+            }
+
+            .sample-table {
+                font-size: 0.85rem;
+            }
+
+            .close-btn {
+                top: 10px;
+                right: 15px;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* ===== TABLE SCROLL WRAPPER ===== */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            /* enables horizontal scroll */
+            -webkit-overflow-scrolling: touch;
+            /* smooth scrolling on iOS */
+            margin-top: 15px;
+            border-radius: 10px;
+        }
+
+        /* optional subtle shadow */
+        .table-wrapper::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: #cfd2ff;
+            border-radius: 4px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-track {
+            background: #f0f2ff;
+        }
+
+        /* make the table stay consistent */
+        .sample-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 910px;
+            /* allows scroll when screen smaller */
+            font-size: 0.95rem;
+        }
+
+        .sample-table th,
+        .sample-table td {
+            border: 1px solid #ddd;
+            padding: 12px 14px;
+            text-align: left;
+        }
+
+        .sample-table th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+
+        .sample-table tr:nth-child(even) {
+            background-color: #f8f9ff;
+        }
     </style>
 </head>
 
@@ -225,8 +456,71 @@
         <div id="uploadArea" class="upload-area" onclick="document.getElementById('fileInput').click()">
             <div class="upload-icon">📤</div>
             <div class="upload-text">Click to upload CSV file</div>
-            <div class="upload-hint">Supports .csv files with Name, Designation, Phone Number, Email.</div>
+            <div class="upload-hint">
+                In The Column names of CSV Files should be exactly same as the <br>
+                <p style="padding-top: 10px;">
+                    <b>NAME</b>,
+                    <b>DESIGNATION</b>,
+                    <b>NUMBER</b>,
+                    <b>OFFICE</b>,
+                    <b>EMAIL</b>
+                </p>
+            </div>
             <input type="file" id="fileInput" accept=".csv">
+        </div>
+
+
+        <!-- Help Modal -->
+        <a href="#" id="helpLink" class="help-link" onclick="openHelp(event)">📘 Need Help?</a>
+
+
+        <div id="helpModal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn" onclick="closeHelp()">&times;</span>
+                <h2>📋 CSV File Structure Example</h2>
+                <p style="color:#555;margin-bottom:20px;">
+                    Your CSV file should follow this exact column order and format:
+                </p>
+                <div class="table-wrapper">
+                    <table class="sample-table">
+                        <thead>
+                            <tr>
+                                <th>NAME</th>
+                                <th>DESIGNATION</th>
+                                <th>NUMBER</th>
+                                <th>OFFICE</th>
+                                <th>EMAIL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>John Doe</td>
+                                <td>Manager</td>
+                                <td>+94 77 123 4567</td>
+                                <td>+94 11 234 5678</td>
+                                <td>john@example.com</td>
+                            </tr>
+                            <tr>
+                                <td>Jane Smith</td>
+                                <td>Assistant</td>
+                                <td>+94 71 987 6543</td>
+                                <td>+94 11 987 1234</td>
+                                <td>jane@example.com</td>
+                            </tr>
+                            <tr>
+                                <td>Michael Perera</td>
+                                <td>Executive</td>
+                                <td>+94 70 456 7890</td>
+                                <td>+94 11 223 3445</td>
+                                <td>michael.perera@hemas.com</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p style="margin-top:20px;color:#666;font-size:0.95em;">
+                    ⚠️ Make sure there are no extra spaces, missing commas, or different column names.
+                </p>
+            </div>
         </div>
 
         <div id="resultArea" class="result-area">
@@ -245,7 +539,7 @@
             <div class="info-box">
                 <h3>📋 How to use:</h3>
                 <ol>
-                    <li>Prepare a CSV file with columns: <strong>Name, Designation, Phone Number, Email</strong>.</li>
+                    <li>Prepare a CSV file with columns: <strong>NAME, DESIGNATION, NUMBER, OFFICE, EMAIL</strong>.</li>
                     <li>Upload it using the box above.</li>
                     <li>A QR code will be created for each contact automatically in SVG format.</li>
                     <li>Download each QR code individually or all at once.</li>
@@ -255,6 +549,23 @@
     </div>
 
     <script>
+        // Help Modal controls
+        function openHelp() {
+            document.getElementById('helpModal').style.display = 'block';
+        }
+        function closeHelp() {
+            document.getElementById('helpModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside of it
+        window.onclick = function (event) {
+            const modal = document.getElementById('helpModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        };
+
+
         let csvData = null;
         let qrImages = [];
 
@@ -269,6 +580,9 @@
 
         function handleFileUpload(e) {
             const file = e.target.files[0];
+            // Hide the Help link after CSV upload
+            document.getElementById('helpLink').style.display = 'none';
+
             if (!file) return;
             if (!file.name.endsWith('.csv')) { showError('Please upload a valid CSV file.'); return; }
 
@@ -285,7 +599,7 @@
 
         function generateMultipleQRCodes(data) {
             const lines = data.split('\n').filter(line => line.trim());
-            const headers = lines[0].split(',').map(h => h.trim());
+            const headers = lines[0].split(',').map(h => h.trim().toUpperCase());
             const contacts = lines.slice(1);
 
             if (contacts.length === 0) { showError('No contact data found in file.'); return; }
@@ -298,25 +612,29 @@
 
             contacts.forEach((contactLine, index) => {
                 const values = contactLine.split(',').map(v => v.trim());
-                if (values.length !== headers.length) return;
+                if (values.length < headers.length) return;
 
                 const contact = {};
                 headers.forEach((h, i) => contact[h] = values[i]);
 
-                const name = contact['Name'] || `Contact ${index + 1}`;
-                const designation = contact['Designation'] || '';
-                const phone = contact['Phone Number'] || '';
-                const email = contact['Email'] || '';
+                const name = contact['NAME'] || `Contact ${index + 1}`;
+                const designation = contact['DESIGNATION'] || '';
+                const mobile = contact['NUMBER'] || '';
+                const office = contact['OFFICE'] || ''; // 🏢 office phone number
+                const email = contact['EMAIL'] || '';
 
-                const vCardData =
-                    `BEGIN:VCARD
-VERSION:3.0
-N:${name}
-FN:${name}
-TITLE:${designation}
-TEL;TYPE=CELL:${phone}
-EMAIL;TYPE=INTERNET:${email}
-END:VCARD`;
+                // ✅ Correctly formatted vCard with CRLF line endings
+                const vCardData = [
+                    'BEGIN:VCARD',
+                    'VERSION:3.0',
+                    `N:${name}`,
+                    `FN:${name}`,
+                    designation ? `TITLE:${designation}` : '',
+                    mobile ? `TEL;TYPE=CELL,VOICE:${mobile}` : '',
+                    office ? `TEL;TYPE=WORK,VOICE:${office}` : '',
+                    email ? `EMAIL;TYPE=INTERNET:${email}` : '',
+                    'END:VCARD'
+                ].filter(Boolean).join('\r\n');
 
                 const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&format=svg&data=${encodeURIComponent(vCardData)}`;
                 const safeName = name.replace(/[^a-zA-Z0-9]/g, '_') || `contact_${index + 1}`;
@@ -366,6 +684,8 @@ END:VCARD`;
         function hideError() { errorDiv.classList.add('hidden'); }
 
         function reset() {
+            document.getElementById('helpLink').style.display = 'inline-block';
+
             csvData = null;
             qrImages = [];
             fileInput.value = '';

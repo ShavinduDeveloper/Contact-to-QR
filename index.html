@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV Contact to QR Generator (SVG)</title>
+    <title>CSV Contact to QR Generator (PNG)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
@@ -447,7 +447,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📱 CSV Contact to QR Generator (SVG)</h1>
+            <h1>📱 CSV Contact to QR Generator (PNG)</h1>
             <p>Upload your CSV to generate vCard QR codes for each contact</p>
         </div>
 
@@ -541,7 +541,7 @@
                 <ol>
                     <li>Prepare a CSV file with columns: <strong>NAME, DESIGNATION, NUMBER, OFFICE, EMAIL</strong>.</li>
                     <li>Upload it using the box above.</li>
-                    <li>A QR code will be created for each contact automatically in SVG format.</li>
+                    <li>A QR code will be created for each contact automatically in PNG format.</li>
                     <li>Download each QR code individually or all at once.</li>
                 </ol>
             </div>
@@ -631,7 +631,7 @@
                 'END:VCARD'
             ].filter(Boolean).join('\r\n');
 
-            // ✔ PNG instead of SVG
+            // ✔ PNG instead of PNG
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&format=png&data=${encodeURIComponent(vCardData)}`;
 
             const safeName = name.replace(/[^a-zA-Z0-9]/g, '_') || `contact_${index + 1}`;

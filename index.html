@@ -547,154 +547,152 @@
             </div>
         </div>
     </div>
+<script>
+    // Help Modal controls
+    function openHelp() {
+        document.getElementById('helpModal').style.display = 'block';
+    }
+    function closeHelp() {
+        document.getElementById('helpModal').style.display = 'none';
+    }
 
-    <script>
-        // Help Modal controls
-        function openHelp() {
-            document.getElementById('helpModal').style.display = 'block';
+    window.onclick = function (event) {
+        const modal = document.getElementById('helpModal');
+        if (event.target === modal) {
+            modal.style.display = 'none';
         }
-        function closeHelp() {
-            document.getElementById('helpModal').style.display = 'none';
-        }
+    };
 
-        // Close modal when clicking outside of it
-        window.onclick = function (event) {
-            const modal = document.getElementById('helpModal');
-            if (event.target === modal) {
-                modal.style.display = 'none';
-            }
+    let csvData = null;
+    let qrImages = [];
+
+    const fileInput = document.getElementById('fileInput');
+    const uploadArea = document.getElementById('uploadArea');
+    const resultArea = document.getElementById('resultArea');
+    const errorDiv = document.getElementById('error');
+    const qrDisplay = document.getElementById('qrDisplay');
+    const fileNameSpan = document.getElementById('fileName');
+
+    fileInput.addEventListener('change', handleFileUpload);
+
+    function handleFileUpload(e) {
+        const file = e.target.files[0];
+        document.getElementById('helpLink').style.display = 'none';
+
+        if (!file) return;
+        if (!file.name.endsWith('.csv')) { showError('Please upload a valid CSV file.'); return; }
+
+        hideError();
+        fileNameSpan.textContent = file.name;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            csvData = event.target.result;
+            generateMultipleQRCodes(csvData);
         };
+        reader.readAsText(file);
+    }
 
+    function generateMultipleQRCodes(data) {
+        const lines = data.split('\n').filter(line => line.trim());
+        const headers = lines[0].split(',').map(h => h.trim().toUpperCase());
+        const contacts = lines.slice(1);
 
-        let csvData = null;
-        let qrImages = [];
+        if (contacts.length === 0) { showError('No contact data found in file.'); return; }
 
-        const fileInput = document.getElementById('fileInput');
-        const uploadArea = document.getElementById('uploadArea');
-        const resultArea = document.getElementById('resultArea');
-        const errorDiv = document.getElementById('error');
-        const qrDisplay = document.getElementById('qrDisplay');
-        const fileNameSpan = document.getElementById('fileName');
+        uploadArea.classList.add('hidden');
+        resultArea.classList.add('active');
 
-        fileInput.addEventListener('change', handleFileUpload);
+        qrImages = [];
+        let html = '<h2 style="text-align:center;color:#333;margin-bottom:20px;">Generated QR Codes</h2><div class="qr-grid">';
 
-        function handleFileUpload(e) {
-            const file = e.target.files[0];
-            // Hide the Help link after CSV upload
-            document.getElementById('helpLink').style.display = 'none';
+        contacts.forEach((contactLine, index) => {
+            const values = contactLine.split(',').map(v => v.trim());
+            if (values.length < headers.length) return;
 
-            if (!file) return;
-            if (!file.name.endsWith('.csv')) { showError('Please upload a valid CSV file.'); return; }
+            const contact = {};
+            headers.forEach((h, i) => contact[h] = values[i]);
 
-            hideError();
-            fileNameSpan.textContent = file.name;
+            const name = contact['NAME'] || `Contact ${index + 1}`;
+            const designation = contact['DESIGNATION'] || '';
+            const mobile = contact['NUMBER'] || '';
+            const office = contact['OFFICE'] || '';
+            const email = contact['EMAIL'] || '';
 
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                csvData = event.target.result;
-                generateMultipleQRCodes(csvData);
-            };
-            reader.readAsText(file);
+            const vCardData = [
+                'BEGIN:VCARD',
+                'VERSION:3.0',
+                `N:${name}`,
+                `FN:${name}`,
+                designation ? `TITLE:${designation}` : '',
+                mobile ? `TEL;TYPE=CELL,VOICE:${mobile}` : '',
+                office ? `TEL;TYPE=WORK,VOICE:${office}` : '',
+                email ? `EMAIL;TYPE=INTERNET:${email}` : '',
+                'END:VCARD'
+            ].filter(Boolean).join('\r\n');
+
+            // ✔ PNG instead of SVG
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&format=png&data=${encodeURIComponent(vCardData)}`;
+
+            const safeName = name.replace(/[^a-zA-Z0-9]/g, '_') || `contact_${index + 1}`;
+
+            // ✔ Store PNG filename
+            qrImages.push({ url: qrUrl, filename: safeName + '.png' });
+
+            html += `
+                <div class="qr-card">
+                    <h3>${name}</h3>
+                    <img src="${qrUrl}" alt="QR for ${name}">
+                    <div style="margin-top:10px;">
+                        <button class="btn btn-primary" onclick="downloadImage('${qrUrl}', '${safeName}.png')">⬇️ Download</button>
+                    </div>
+                </div>`;
+        });
+
+        html += '</div>';
+        qrDisplay.innerHTML = html;
+    }
+
+    function downloadImage(url, filename) {
+        fetch(url).then(res => res.blob()).then(blob => {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    }
+
+    async function downloadAllQRCodes() {
+        if (qrImages.length === 0) return;
+        const zip = new JSZip();
+
+        for (let { url, filename } of qrImages) {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            zip.file(filename, blob);
         }
 
-        function generateMultipleQRCodes(data) {
-            const lines = data.split('\n').filter(line => line.trim());
-            const headers = lines[0].split(',').map(h => h.trim().toUpperCase());
-            const contacts = lines.slice(1);
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        saveAs(zipBlob, 'All_QR_Codes.zip');
+    }
 
-            if (contacts.length === 0) { showError('No contact data found in file.'); return; }
+    function showError(message) { errorDiv.textContent = message; errorDiv.classList.remove('hidden'); }
+    function hideError() { errorDiv.classList.add('hidden'); }
 
-            uploadArea.classList.add('hidden');
-            resultArea.classList.add('active');
+    function reset() {
+        document.getElementById('helpLink').style.display = 'inline-block';
+        csvData = null;
+        qrImages = [];
+        fileInput.value = '';
+        uploadArea.classList.remove('hidden');
+        resultArea.classList.remove('active');
+        qrDisplay.innerHTML = '';
+        hideError();
+    }
+</script>
 
-            qrImages = [];
-            let html = '<h2 style="text-align:center;color:#333;margin-bottom:20px;">Generated QR Codes</h2><div class="qr-grid">';
-
-            contacts.forEach((contactLine, index) => {
-                const values = contactLine.split(',').map(v => v.trim());
-                if (values.length < headers.length) return;
-
-                const contact = {};
-                headers.forEach((h, i) => contact[h] = values[i]);
-
-                const name = contact['NAME'] || `Contact ${index + 1}`;
-                const designation = contact['DESIGNATION'] || '';
-                const mobile = contact['NUMBER'] || '';
-                const office = contact['OFFICE'] || ''; // 🏢 office phone number
-                const email = contact['EMAIL'] || '';
-
-                // ✅ Correctly formatted vCard with CRLF line endings
-                const vCardData = [
-                    'BEGIN:VCARD',
-                    'VERSION:3.0',
-                    `N:${name}`,
-                    `FN:${name}`,
-                    designation ? `TITLE:${designation}` : '',
-                    mobile ? `TEL;TYPE=CELL,VOICE:${mobile}` : '',
-                    office ? `TEL;TYPE=WORK,VOICE:${office}` : '',
-                    email ? `EMAIL;TYPE=INTERNET:${email}` : '',
-                    'END:VCARD'
-                ].filter(Boolean).join('\r\n');
-
-                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&format=svg&data=${encodeURIComponent(vCardData)}`;
-                const safeName = name.replace(/[^a-zA-Z0-9]/g, '_') || `contact_${index + 1}`;
-
-                qrImages.push({ url: qrUrl, filename: safeName + '.svg' });
-
-                html += `
-            <div class="qr-card">
-                <h3>${name}</h3>
-                <img src="${qrUrl}" alt="QR for ${name}">
-                <div style="margin-top:10px;">
-                    <button class="btn btn-primary" onclick="downloadImage('${qrUrl}', '${safeName}.svg')">⬇️ Download</button>
-                </div>
-            </div>`;
-            });
-
-            html += '</div>';
-            qrDisplay.innerHTML = html;
-        }
-
-        function downloadImage(url, filename) {
-            fetch(url).then(res => res.blob()).then(blob => {
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = filename;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            });
-        }
-
-        async function downloadAllQRCodes() {
-            if (qrImages.length === 0) return;
-            const zip = new JSZip();
-
-            for (let { url, filename } of qrImages) {
-                const response = await fetch(url);
-                const blob = await response.blob();
-                zip.file(filename, blob);
-            }
-
-            const zipBlob = await zip.generateAsync({ type: 'blob' });
-            saveAs(zipBlob, 'All_QR_Codes.zip');
-        }
-
-        function showError(message) { errorDiv.textContent = message; errorDiv.classList.remove('hidden'); }
-        function hideError() { errorDiv.classList.add('hidden'); }
-
-        function reset() {
-            document.getElementById('helpLink').style.display = 'inline-block';
-
-            csvData = null;
-            qrImages = [];
-            fileInput.value = '';
-            uploadArea.classList.remove('hidden');
-            resultArea.classList.remove('active');
-            qrDisplay.innerHTML = '';
-            hideError();
-        }
-    </script>
 
     <footer
         style="text-align:center; margin-top:40px; padding:20px 0; color:#fff; background:#667eea; font-size:1em; position: fixed; width: 100%; bottom: 0;">
